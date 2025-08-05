@@ -132,14 +132,17 @@ let pauseUntil = null;
 
 const server = http.createServer((req, res) => {
   // Désactiver tout cache sur les routes API
-if (url.startsWith('/api/')) {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.setHeader('Surrogate-Control', 'no-store');
-}
-
+  
   const { method, url } = req;
+  if (url.startsWith("/api/")) {
+    res.setHeader(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate"
+    );
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
+  }
   // CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
