@@ -2,8 +2,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 // Chargement des données initiales depuis les fichiers JSON du frontend
-const teamsPath = path.join(__dirname, '..', 'src', 'data', 'teams.json');
-const challengesPath = path.join(__dirname, '..', 'src', 'data', 'challenges.json');
+const teamsPath = path.join(__dirname, 'src', 'data', 'teams.json');
+const challengesPath = path.join(__dirname, 'src', 'data', 'challenges.json');
 
 function loadData() {
   const teams = JSON.parse(fs.readFileSync(teamsPath, 'utf8'));
