@@ -1,13 +1,13 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+const http = require("http");
+const fs = require("fs");
+const path = require("path");
 // Chargement des données initiales depuis les fichiers JSON du frontend
-const teamsPath = path.join(__dirname, 'src', 'data', 'teams.json');
-const challengesPath = path.join(__dirname, 'src', 'data', 'challenges.json');
+const teamsPath = path.join(__dirname, "src", "data", "teams.json");
+const challengesPath = path.join(__dirname, "src", "data", "challenges.json");
 
 function loadData() {
-  const teams = JSON.parse(fs.readFileSync(teamsPath, 'utf8'));
-  const challenges = JSON.parse(fs.readFileSync(challengesPath, 'utf8'));
+  const teams = JSON.parse(fs.readFileSync(teamsPath, "utf8"));
+  const challenges = JSON.parse(fs.readFileSync(challengesPath, "utf8"));
   return { teams, challenges };
 }
 
@@ -29,14 +29,16 @@ function toggleChallenge(teamId, challengeId) {
   if (challenge.disabled) return;
   const isWinner = challenge.winners.includes(teamId);
   // Si rare et déjà gagné par un autre
-  const isExclusive = challenge.type === 'rare' || challenge.type === 'secret';
+  const isExclusive = challenge.type === "rare" || challenge.type === "secret";
   if (isExclusive && !isWinner && challenge.winners.length > 0) {
     return;
   }
   if (isWinner) {
     // retirer
     challenge.winners = challenge.winners.filter((id) => id !== teamId);
-    team.completedChallenges = team.completedChallenges.filter((id) => id !== challengeId);
+    team.completedChallenges = team.completedChallenges.filter(
+      (id) => id !== challengeId
+    );
     team.points -= challenge.points;
     if (team.points < 0) team.points = 0;
   } else {
@@ -82,7 +84,9 @@ function toggleDisabled(challengeId) {
     } else {
       // Désactivation : retirer points et l'identifiant
       if (hasCompleted) {
-        team.completedChallenges = team.completedChallenges.filter((cid) => cid !== challengeId);
+        team.completedChallenges = team.completedChallenges.filter(
+          (cid) => cid !== challengeId
+        );
         team.points -= challenge.points;
         if (team.points < 0) team.points = 0;
       }
@@ -129,42 +133,51 @@ let pauseUntil = null;
 const server = http.createServer((req, res) => {
   const { method, url } = req;
   // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (method === 'OPTIONS') {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  // Disable caching
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate"
+  );
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+
+  if (method === "OPTIONS") {
     res.statusCode = 204;
     return res.end();
   }
 
   // Route pour obtenir l'état global (suspens et pause)
-  if (method === 'GET' && url === '/api/state') {
-    res.setHeader('Content-Type', 'application/json');
+  if (method === "GET" && url === "/api/state") {
+    res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify({ suspenseMode, pauseUntil }));
   }
   // Récupération des équipes
-  if (method === 'GET' && url === '/api/teams') {
-    res.setHeader('Content-Type', 'application/json');
+  if (method === "GET" && url === "/api/teams") {
+    res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify(teams));
   }
   // Récupération des défis
-  if (method === 'GET' && url === '/api/challenges') {
-    res.setHeader('Content-Type', 'application/json');
+  if (method === "GET" && url === "/api/challenges") {
+    res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify(challenges));
   }
   // Validation / annulation d'un défi
-  if (method === 'POST' && url === '/api/validate') {
-    let body = '';
-    req.on('data', (chunk) => {
+  if (method === "POST" && url === "/api/validate") {
+    let body = "";
+    req.on("data", (chunk) => {
       body += chunk;
     });
-    req.on('end', () => {
+    req.on("end", () => {
       try {
         const data = JSON.parse(body);
         const { teamId, challengeId } = data;
         toggleChallenge(teamId, challengeId);
         res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
+        res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ success: true, teams, challenges }));
       } catch (err) {
         res.statusCode = 400;
@@ -174,18 +187,18 @@ const server = http.createServer((req, res) => {
     return;
   }
   // Ajout de points personnels
-  if (method === 'POST' && url === '/api/addPersonalPoints') {
-    let body = '';
-    req.on('data', (chunk) => {
+  if (method === "POST" && url === "/api/addPersonalPoints") {
+    let body = "";
+    req.on("data", (chunk) => {
       body += chunk;
     });
-    req.on('end', () => {
+    req.on("end", () => {
       try {
         const data = JSON.parse(body);
         const { teamId, playerId, amount } = data;
         addPoints(teamId, playerId, amount);
         res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
+        res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ success: true, teams }));
       } catch (err) {
         res.statusCode = 400;
@@ -195,18 +208,18 @@ const server = http.createServer((req, res) => {
     return;
   }
   // Activer/désactiver un défi
-  if (method === 'POST' && url === '/api/toggleDisabled') {
-    let body = '';
-    req.on('data', (chunk) => {
+  if (method === "POST" && url === "/api/toggleDisabled") {
+    let body = "";
+    req.on("data", (chunk) => {
       body += chunk;
     });
-    req.on('end', () => {
+    req.on("end", () => {
       try {
         const data = JSON.parse(body);
         const { challengeId } = data;
         toggleDisabled(challengeId);
         res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
+        res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ success: true, challenges, teams }));
       } catch (err) {
         res.statusCode = 400;
@@ -216,18 +229,18 @@ const server = http.createServer((req, res) => {
     return;
   }
   // Activer ou désactiver le mode suspens
-  if (method === 'POST' && url === '/api/setSuspense') {
-    let body = '';
-    req.on('data', (chunk) => {
+  if (method === "POST" && url === "/api/setSuspense") {
+    let body = "";
+    req.on("data", (chunk) => {
       body += chunk;
     });
-    req.on('end', () => {
+    req.on("end", () => {
       try {
         const data = JSON.parse(body);
         // data.active doit être un boolean
         suspenseMode = !!data.active;
         res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
+        res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ success: true, suspenseMode }));
       } catch (err) {
         res.statusCode = 400;
@@ -237,23 +250,23 @@ const server = http.createServer((req, res) => {
     return;
   }
   // Démarrer ou annuler une pause. Envoyer resumeAt sous forme ISO ou null pour annuler.
-  if (method === 'POST' && url === '/api/setPause') {
-    let body = '';
-    req.on('data', (chunk) => {
+  if (method === "POST" && url === "/api/setPause") {
+    let body = "";
+    req.on("data", (chunk) => {
       body += chunk;
     });
-    req.on('end', () => {
+    req.on("end", () => {
       try {
         const data = JSON.parse(body);
         const { resumeAt } = data;
         // Si resumeAt est une chaîne non vide, la convertir ; sinon, annuler la pause
-        if (typeof resumeAt === 'string' && resumeAt.trim()) {
+        if (typeof resumeAt === "string" && resumeAt.trim()) {
           pauseUntil = resumeAt;
         } else {
           pauseUntil = null;
         }
         res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
+        res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ success: true, pauseUntil }));
       } catch (err) {
         res.statusCode = 400;
@@ -263,38 +276,38 @@ const server = http.createServer((req, res) => {
     return;
   }
   // Échanger deux joueurs entre équipes
-  if (method === 'POST' && url === '/api/swapPlayers') {
-    let body = '';
-    req.on('data', (chunk) => {
+  if (method === "POST" && url === "/api/swapPlayers") {
+    let body = "";
+    req.on("data", (chunk) => {
       body += chunk;
     });
-    req.on('end', () => {
+    req.on("end", () => {
       try {
         const data = JSON.parse(body);
         const { playerId, targetTeamId, targetPlayerId } = data;
         swapPlayersBackend(playerId, targetTeamId, targetPlayerId);
         res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
+        res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ success: true, teams }));
       } catch (err) {
         res.statusCode = 400;
-        res.setHeader('Content-Type', 'application/json');
+        res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ success: false, error: err.message }));
       }
     });
     return;
   }
   // Reset complet
-  if (method === 'GET' && url === '/api/reset') {
+  if (method === "GET" && url === "/api/reset") {
     resetData();
     res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify({ success: true }));
   }
   // Route inconnue
   res.statusCode = 404;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify({ error: 'Not found' }));
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify({ error: "Not found" }));
 });
 
 const PORT = process.env.PORT || 3000;
