@@ -1,0 +1,62 @@
+[
+  {
+    "id": "c1",
+    "name": "Défi 1",
+    "description": "Réaliser une petite épreuve technique.",
+    "points": 10,
+    "type": "normal",
+    "availableAt": "2024-06-01T00:00:00Z",
+    "winners": []
+    , "disabled": false
+  },
+  {
+    "id": "c2",
+    "name": "Défi 2",
+    "description": "Présenter un exposé original.",
+    "points": 20,
+    "type": "normal",
+    "availableAt": "2024-06-02T00:00:00Z",
+    "winners": []
+    , "disabled": false
+  },
+  {
+    "id": "c3",
+    "name": "Défi 3",
+    "description": "Participer à un hackathon.",
+    "points": 20,
+    "type": "normal",
+    "availableAt": "2024-06-03T00:00:00Z",
+    "winners": []
+    , "disabled": false
+  },
+  {
+    "id": "r1",
+    "name": "Défi rare 1",
+    "description": "Enigme complexe réservée aux plus rapides.",
+    "points": 40,
+    "type": "rare",
+    "availableAt": "2024-06-01T00:00:00Z",
+    "winners": []
+    , "disabled": false
+  },
+  {
+    "id": "s1",
+    "name": "Défi secret 1",
+    "description": "Défi secret à découvrir.",
+    "points": 30,
+    "type": "secret",
+    "availableAt": "2024-06-01T00:00:00Z",
+    "winners": []
+    , "disabled": false
+  },
+  {
+    "id": "f1",
+    "name": "Défi futur",
+    "description": "Cet événement ne sera disponible que plus tard.",
+    "points": 50,
+    "type": "normal",
+    "availableAt": "2025-12-31T23:00:00Z",
+    "winners": []
+    , "disabled": false
+  }
+]

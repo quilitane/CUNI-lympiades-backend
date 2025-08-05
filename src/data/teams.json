@@ -1,0 +1,112 @@
+[
+  {
+    "id": "rouge",
+    "name": "Rouge",
+    "color": "#e74c3c",
+    "points": 0,
+    "completedChallenges": [],
+    "players": [
+      { "id": "p1", "firstName": "Alice", "lastName": "Martin", "personalPoints": 0 },
+      { "id": "p2", "firstName": "Bob", "lastName": "Lambert", "personalPoints": 0 }
+    ]
+  },
+  {
+    "id": "bleue",
+    "name": "Bleue",
+    "color": "#2980b9",
+    "points": 0,
+    "completedChallenges": [],
+    "players": [
+      { "id": "p3", "firstName": "Clara", "lastName": "Dupont", "personalPoints": 0 },
+      { "id": "p4", "firstName": "David", "lastName": "Durand", "personalPoints": 0 }
+    ]
+  },
+  {
+    "id": "verte",
+    "name": "Verte",
+    "color": "#2ecc71",
+    "points": 0,
+    "completedChallenges": [],
+    "players": [
+      { "id": "p5", "firstName": "Emma", "lastName": "Lefevre", "personalPoints": 0 },
+      { "id": "p6", "firstName": "Fabien", "lastName": "Moreau", "personalPoints": 0 }
+    ]
+  },
+  {
+    "id": "jaune",
+    "name": "Jaune",
+    "color": "#f1c40f",
+    "points": 0,
+    "completedChallenges": [],
+    "players": [
+      { "id": "p7", "firstName": "Gina", "lastName": "Bernard", "personalPoints": 0 },
+      { "id": "p8", "firstName": "Hugo", "lastName": "Girard", "personalPoints": 0 }
+    ]
+  },
+  {
+    "id": "orange",
+    "name": "Orange",
+    "color": "#e67e22",
+    "points": 0,
+    "completedChallenges": [],
+    "players": [
+      { "id": "p9", "firstName": "Ines", "lastName": "Petit", "personalPoints": 0 },
+      { "id": "p10", "firstName": "Jules", "lastName": "Fabre", "personalPoints": 0 }
+    ]
+  },
+  {
+    "id": "rose",
+    "name": "Rose",
+    "color": "#e91e63",
+    "points": 0,
+    "completedChallenges": [],
+    "players": [
+      { "id": "p11", "firstName": "Leo", "lastName": "Garcia", "personalPoints": 0 },
+      { "id": "p12", "firstName": "Nina", "lastName": "Richard", "personalPoints": 0 }
+    ]
+  },
+  {
+    "id": "violet",
+    "name": "Violet",
+    "color": "#9b59b6",
+    "points": 0,
+    "completedChallenges": [],
+    "players": [
+      { "id": "p13", "firstName": "Oscar", "lastName": "Laurent", "personalPoints": 0 },
+      { "id": "p14", "firstName": "Pauline", "lastName": "Henry", "personalPoints": 0 }
+    ]
+  },
+  {
+    "id": "cyan",
+    "name": "Cyan",
+    "color": "#1abc9c",
+    "points": 0,
+    "completedChallenges": [],
+    "players": [
+      { "id": "p15", "firstName": "Quentin", "lastName": "Michel", "personalPoints": 0 },
+      { "id": "p16", "firstName": "Rachel", "lastName": "Simon", "personalPoints": 0 }
+    ]
+  },
+  {
+    "id": "magenta",
+    "name": "Magenta",
+    "color": "#2e7d32",
+    "points": 0,
+    "completedChallenges": [],
+    "players": [
+      { "id": "p17", "firstName": "Samuel", "lastName": "Rousseau", "personalPoints": 0 },
+      { "id": "p18", "firstName": "Tina", "lastName": "Martins", "personalPoints": 0 }
+    ]
+  },
+  {
+    "id": "turquoise",
+    "name": "Turquoise",
+    "color": "#5dade2",
+    "points": 0,
+    "completedChallenges": [],
+    "players": [
+      { "id": "p19", "firstName": "Ulysse", "lastName": "Robert", "personalPoints": 0 },
+      { "id": "p20", "firstName": "Valerie", "lastName": "Andre", "personalPoints": 0 }
+    ]
+  }
+]
