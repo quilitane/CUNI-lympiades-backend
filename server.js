@@ -215,6 +215,27 @@ const server = http.createServer((req, res) => {
       });
       return;
     }
+
+    //Retirer des points personnels
+    if (method === "POST" && cleanUrl === "/api/removePersonalPoints") {
+      let body = "";
+      req.on("data", (chunk) => (body += chunk));
+      req.on("end", () => {
+        try {
+          const data = JSON.parse(body);
+          const { teamId, playerId, amount } = data;
+          addPoints(teamId, playerId, -amount);
+          res.statusCode = 200;
+          res.setHeader("Content-Type", "application/json");
+          return res.end(JSON.stringify({ success: true, teams }));
+        } catch (err) {
+          res.statusCode = 400;
+          return res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+      });
+      return;
+    }
+
     // Activer/désactiver un défi
     if (method === "POST" && cleanUrl === "/api/toggleDisabled") {
       let body = "";
