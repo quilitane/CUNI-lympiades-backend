@@ -131,7 +131,7 @@ let suspenseMode = false;
 let pauseUntil = null;
 
 const server = http.createServer((req, res) => {
-  // On isole le chemin sans le querystring
+  // On sépare le chemin du querystring pour que `?t=...` soit accepté
   const { method } = req;
   const pathname = (req.url || "").split("?")[0];
 
@@ -163,25 +163,31 @@ const server = http.createServer((req, res) => {
     return res.end();
   }
 
-  // Toutes les routes API (pathname utilisé au lieu de url pour ignorer ?t=)
+  // Route pour obtenir l'état global (suspens et pause)
   if (method === "GET" && pathname === "/api/state") {
     res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify({ suspenseMode, pauseUntil }));
   }
+  // Récupération des équipes
   if (method === "GET" && pathname === "/api/teams") {
     res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify(teams));
   }
+  // Récupération des défis
   if (method === "GET" && pathname === "/api/challenges") {
     res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify(challenges));
   }
+  // Validation / annulation d'un défi
   if (method === "POST" && pathname === "/api/validate") {
     let body = "";
-    req.on("data", (chunk) => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", () => {
       try {
-        const { teamId, challengeId } = JSON.parse(body);
+        const data = JSON.parse(body);
+        const { teamId, challengeId } = data;
         toggleChallenge(teamId, challengeId);
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
@@ -193,12 +199,16 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  // Ajout de points personnels
   if (method === "POST" && pathname === "/api/addPersonalPoints") {
     let body = "";
-    req.on("data", (chunk) => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", () => {
       try {
-        const { teamId, playerId, amount } = JSON.parse(body);
+        const data = JSON.parse(body);
+        const { teamId, playerId, amount } = data;
         addPoints(teamId, playerId, amount);
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
@@ -210,12 +220,16 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  // Activer/désactiver un défi
   if (method === "POST" && pathname === "/api/toggleDisabled") {
     let body = "";
-    req.on("data", (chunk) => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", () => {
       try {
-        const { challengeId } = JSON.parse(body);
+        const data = JSON.parse(body);
+        const { challengeId } = data;
         toggleDisabled(challengeId);
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
@@ -227,13 +241,16 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  // Activer ou désactiver le mode suspens
   if (method === "POST" && pathname === "/api/setSuspense") {
     let body = "";
-    req.on("data", (chunk) => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", () => {
       try {
-        const { active } = JSON.parse(body);
-        suspenseMode = !!active;
+        const data = JSON.parse(body);
+        suspenseMode = !!data.active;
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
         return res.end(JSON.stringify({ success: true, suspenseMode }));
@@ -244,13 +261,21 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  // Démarrer ou annuler une pause
   if (method === "POST" && pathname === "/api/setPause") {
     let body = "";
-    req.on("data", (chunk) => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", () => {
       try {
-        const { resumeAt } = JSON.parse(body);
-        pauseUntil = (typeof resumeAt === "string" && resumeAt.trim()) ? resumeAt : null;
+        const data = JSON.parse(body);
+        const { resumeAt } = data;
+        if (typeof resumeAt === "string" && resumeAt.trim()) {
+          pauseUntil = resumeAt;
+        } else {
+          pauseUntil = null;
+        }
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
         return res.end(JSON.stringify({ success: true, pauseUntil }));
@@ -261,23 +286,29 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  // Échanger deux joueurs entre équipes
   if (method === "POST" && pathname === "/api/swapPlayers") {
     let body = "";
-    req.on("data", (chunk) => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", () => {
       try {
-        const { playerId, targetTeamId, targetPlayerId } = JSON.parse(body);
+        const data = JSON.parse(body);
+        const { playerId, targetTeamId, targetPlayerId } = data;
         swapPlayersBackend(playerId, targetTeamId, targetPlayerId);
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
         return res.end(JSON.stringify({ success: true, teams }));
       } catch (err) {
         res.statusCode = 400;
+        res.setHeader("Content-Type", "application/json");
         return res.end(JSON.stringify({ success: false, error: err.message }));
       }
     });
     return;
   }
+  // Reset complet
   if (method === "GET" && pathname === "/api/reset") {
     resetData();
     res.statusCode = 200;
@@ -292,13 +323,13 @@ const server = http.createServer((req, res) => {
     if (err) {
       res.statusCode = 404;
       res.setHeader("Content-Type", "text/plain");
-      return res.end("Not found"); // return ajouté ici
+      return res.end("Not found");
     }
     res.setHeader("Content-Type", getMimeType(filePath));
-    return res.end(content); // return ajouté ici
+    return res.end(content);
   });
 
-  // Route inconnue (ne sera atteinte que si fs.readFile n'a pas répondu)
+  // Route inconnue
   res.statusCode = 404;
   res.setHeader("Content-Type", "application/json");
   return res.end(JSON.stringify({ error: "Not found" }));
