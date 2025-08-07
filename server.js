@@ -189,10 +189,10 @@ const server = http.createServer((req, res) => {
         toggleChallenge(teamId, challengeId);
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ success: true, teams, challenges }));
+                return res.end(JSON.stringify({ success: true, teams, challenges }));
       } catch (err) {
         res.statusCode = 400;
-        res.end(JSON.stringify({ success: false, error: err.message }));
+                return res.end(JSON.stringify({ success: false, error: err.message }));
       }
     });
     return;
@@ -210,10 +210,10 @@ const server = http.createServer((req, res) => {
         addPoints(teamId, playerId, amount);
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ success: true, teams }));
+                return res.end(JSON.stringify({ success: true, teams }));
       } catch (err) {
         res.statusCode = 400;
-        res.end(JSON.stringify({ success: false, error: err.message }));
+                return res.end(JSON.stringify({ success: false, error: err.message }));
       }
     });
     return;
@@ -231,10 +231,10 @@ const server = http.createServer((req, res) => {
         toggleDisabled(challengeId);
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ success: true, challenges, teams }));
+                return res.end(JSON.stringify({ success: true, challenges, teams }));
       } catch (err) {
         res.statusCode = 400;
-        res.end(JSON.stringify({ success: false, error: err.message }));
+                return res.end(JSON.stringify({ success: false, error: err.message }));
       }
     });
     return;
@@ -252,10 +252,10 @@ const server = http.createServer((req, res) => {
         suspenseMode = !!data.active;
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ success: true, suspenseMode }));
+                return res.end(JSON.stringify({ success: true, suspenseMode }));
       } catch (err) {
         res.statusCode = 400;
-        res.end(JSON.stringify({ success: false, error: err.message }));
+                return res.end(JSON.stringify({ success: false, error: err.message }));
       }
     });
     return;
@@ -278,10 +278,10 @@ const server = http.createServer((req, res) => {
         }
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ success: true, pauseUntil }));
+                return res.end(JSON.stringify({ success: true, pauseUntil }));
       } catch (err) {
         res.statusCode = 400;
-        res.end(JSON.stringify({ success: false, error: err.message }));
+                return res.end(JSON.stringify({ success: false, error: err.message }));
       }
     });
     return;
@@ -299,11 +299,11 @@ const server = http.createServer((req, res) => {
         swapPlayersBackend(playerId, targetTeamId, targetPlayerId);
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ success: true, teams }));
+                return res.end(JSON.stringify({ success: true, teams }));
       } catch (err) {
         res.statusCode = 400;
         res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ success: false, error: err.message }));
+                return res.end(JSON.stringify({ success: false, error: err.message }));
       }
     });
     return;
@@ -332,7 +332,7 @@ const server = http.createServer((req, res) => {
   // Route inconnue
   res.statusCode = 404;
   res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify({ error: "Not found" }));
+    return res.end(JSON.stringify({ error: "Not found" }));
 });
 
 const PORT = process.env.PORT || 3000;
