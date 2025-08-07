@@ -313,22 +313,26 @@ const server = http.createServer((req, res) => {
     resetData();
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/json");
-    return safeEnd(JSON.stringify({ success: true }));
+    return res.end(JSON.stringify({ success: true }));
   }
-
+  
   // Gestion des fichiers statiques (frontend)
   const staticDir = path.join(__dirname, "dist");
   const filePath = path.join(staticDir, url === "/" ? "index.html" : url.split("?")[0]);
   fs.readFile(filePath, (err, content) => {
-    if (responded) return;
     if (err) {
       res.statusCode = 404;
       res.setHeader("Content-Type", "text/plain");
-      return safeEnd("Not found");
+      return res.end("Not found");
     }
     res.setHeader("Content-Type", getMimeType(filePath));
-    return safeEnd(content);
+    return res.end(content);
   });
+
+  // Route inconnue
+  res.statusCode = 404;
+  res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify({ error: "Not found" }));
 });
 
 const PORT = process.env.PORT || 3000;
