@@ -156,25 +156,29 @@ const server = http.createServer((req, res) => {
     return res.end();
   }
 
+  // ...existing code...
   // ====== API ======
   if (url.startsWith("/api/")) {
+    // Strip query string for API routing
+    const cleanUrl = url.split("?")[0];
+
     // Route pour obtenir l'état global (suspens et pause)
-    if (method === "GET" && url === "/api/state") {
+    if (method === "GET" && cleanUrl === "/api/state") {
       res.setHeader("Content-Type", "application/json");
       return res.end(JSON.stringify({ suspenseMode, pauseUntil }));
     }
     // Récupération des équipes
-    if (method === "GET" && url === "/api/teams") {
+    if (method === "GET" && cleanUrl === "/api/teams") {
       res.setHeader("Content-Type", "application/json");
       return res.end(JSON.stringify(teams));
     }
     // Récupération des défis
-    if (method === "GET" && url === "/api/challenges") {
+    if (method === "GET" && cleanUrl === "/api/challenges") {
       res.setHeader("Content-Type", "application/json");
       return res.end(JSON.stringify(challenges));
     }
     // Validation / annulation d'un défi
-    if (method === "POST" && url === "/api/validate") {
+    if (method === "POST" && cleanUrl === "/api/validate") {
       let body = "";
       req.on("data", (chunk) => (body += chunk));
       req.on("end", () => {
@@ -193,7 +197,7 @@ const server = http.createServer((req, res) => {
       return;
     }
     // Ajout de points personnels
-    if (method === "POST" && url === "/api/addPersonalPoints") {
+    if (method === "POST" && cleanUrl === "/api/addPersonalPoints") {
       let body = "";
       req.on("data", (chunk) => (body += chunk));
       req.on("end", () => {
@@ -212,7 +216,7 @@ const server = http.createServer((req, res) => {
       return;
     }
     // Activer/désactiver un défi
-    if (method === "POST" && url === "/api/toggleDisabled") {
+    if (method === "POST" && cleanUrl === "/api/toggleDisabled") {
       let body = "";
       req.on("data", (chunk) => (body += chunk));
       req.on("end", () => {
@@ -231,7 +235,7 @@ const server = http.createServer((req, res) => {
       return;
     }
     // Activer ou désactiver le mode suspens
-    if (method === "POST" && url === "/api/setSuspense") {
+    if (method === "POST" && cleanUrl === "/api/setSuspense") {
       let body = "";
       req.on("data", (chunk) => (body += chunk));
       req.on("end", () => {
@@ -249,7 +253,7 @@ const server = http.createServer((req, res) => {
       return;
     }
     // Démarrer ou annuler une pause
-    if (method === "POST" && url === "/api/setPause") {
+    if (method === "POST" && cleanUrl === "/api/setPause") {
       let body = "";
       req.on("data", (chunk) => (body += chunk));
       req.on("end", () => {
@@ -272,7 +276,7 @@ const server = http.createServer((req, res) => {
       return;
     }
     // Échanger deux joueurs entre équipes
-    if (method === "POST" && url === "/api/swapPlayers") {
+    if (method === "POST" && cleanUrl === "/api/swapPlayers") {
       let body = "";
       req.on("data", (chunk) => (body += chunk));
       req.on("end", () => {
@@ -292,7 +296,7 @@ const server = http.createServer((req, res) => {
       return;
     }
     // Reset complet
-    if (method === "GET" && url === "/api/reset") {
+    if (method === "GET" && cleanUrl === "/api/reset") {
       resetData();
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/json");
@@ -304,6 +308,7 @@ const server = http.createServer((req, res) => {
     res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify({ error: "Not found" }));
   }
+// ...existing code...
 
   // ====== STATIC (frontend) ======
   if (method === "GET") {
