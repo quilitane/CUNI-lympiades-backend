@@ -1,0 +1,44 @@
+{
+  "c1": [
+    [
+      { "heure_reveal": "2025-08-08T10:00:00Z", "heure_fin": "2025-08-08T10:30:00Z", "tip_txt": "Regarde près du point d’eau." },
+      { "heure_reveal": "2025-08-08T10:30:00Z", "heure_fin": "2025-08-08T11:00:00Z", "tip_txt": "Pense aux indices de couleur." },
+      { "heure_reveal": "2025-08-08T11:00:00Z", "heure_fin": "2025-08-08T11:30:00Z", "tip_txt": "Le premier arrivé a un bonus." }
+    ]
+  ],
+  "c2": [
+    [
+      { "heure_reveal": "2025-08-08T10:00:00Z", "heure_fin": "2025-08-08T10:30:00Z", "tip_txt": "L’entrée nord cache un secret." },
+      { "heure_reveal": "2025-08-08T10:30:00Z", "heure_fin": "2025-08-08T11:00:00Z", "tip_txt": "Lis bien les consignes affichées." },
+      { "heure_reveal": "2025-08-08T11:00:00Z", "heure_fin": "2025-08-08T11:30:00Z", "tip_txt": "Ne néglige pas les détails." }
+    ]
+  ],
+  "c3": [
+    [
+      { "heure_reveal": "2025-08-08T10:00:00Z", "heure_fin": "2025-08-08T10:30:00Z", "tip_txt": "Formez des binômes complémentaires." },
+      { "heure_reveal": "2025-08-08T10:30:00Z", "heure_fin": "2025-08-08T11:00:00Z", "tip_txt": "Le timing compte plus que la force." },
+      { "heure_reveal": "2025-08-08T11:00:00Z", "heure_fin": "2025-08-08T11:30:00Z", "tip_txt": "Checkez la checklist avant de valider." }
+    ]
+  ],
+  "r1": [
+    [
+      { "heure_reveal": "2025-08-08T10:00:00Z", "heure_fin": "2025-08-08T10:30:00Z", "tip_txt": "Indice rare : la solution est unique." },
+      { "heure_reveal": "2025-08-08T10:30:00Z", "heure_fin": "2025-08-08T11:00:00Z", "tip_txt": "Un seul gagnant possible." },
+      { "heure_reveal": "2025-08-08T11:00:00Z", "heure_fin": "2025-08-08T11:30:00Z", "tip_txt": "Observez le motif caché." }
+    ]
+  ],
+  "s1": [
+    [
+      { "heure_reveal": "2025-08-08T10:00:00Z", "heure_fin": "2025-08-08T10:30:00Z", "tip_txt": "Secret : l’indice n’est pas où vous pensez." },
+      { "heure_reveal": "2025-08-08T10:30:00Z", "heure_fin": "2025-08-08T11:00:00Z", "tip_txt": "Cherchez l’objet déplacé." },
+      { "heure_reveal": "2025-08-08T11:00:00Z", "heure_fin": "2025-08-08T11:30:00Z", "tip_txt": "Le troisième signal est le bon." }
+    ]
+  ],
+  "f1": [
+    [
+      { "heure_reveal": "2025-08-08T10:00:00Z", "heure_fin": "2025-08-08T10:30:00Z", "tip_txt": "Disponible plus tard : préparez-vous." },
+      { "heure_reveal": "2025-08-08T10:30:00Z", "heure_fin": "2025-08-08T11:00:00Z", "tip_txt": "Gardez de l’énergie pour la fin." },
+      { "heure_reveal": "2025-08-08T11:00:00Z", "heure_fin": "2025-08-08T11:30:00Z", "tip_txt": "Synchronisez votre équipe." }
+    ]
+  ]
+}

@@ -1,12 +1,11 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-
 // Chargement des données initiales depuis les fichiers JSON du frontend
 const teamsPath = path.join(__dirname, "src", "data", "teams.json");
 const challengesPath = path.join(__dirname, "src", "data", "challenges.json");
-// Dossier statique (frontend build)
-const staticDir = path.join(__dirname, "dist");
+// (Tâche 2) Chargement des tips (structure: { [challengeId]: [ [ {heure_reveal, heure_fin, tip_txt}, x3 ], ... ] })
+const tipsPath = path.join(__dirname, "src", "data", "tips.json");
 
 function loadData() {
   const teams = JSON.parse(fs.readFileSync(teamsPath, "utf8"));
@@ -14,7 +13,18 @@ function loadData() {
   return { teams, challenges };
 }
 
+// (Tâche 2) Charger les tips
+function loadTips() {
+  try {
+    return JSON.parse(fs.readFileSync(tipsPath, "utf8"));
+  } catch (e) {
+    console.warn("Impossible de charger tips.json, retour d'un objet vide:", e?.message);
+    return {};
+  }
+}
+
 let { teams, challenges } = loadData();
+let tipsByChallenge = loadTips();
 
 function findTeam(id) {
   return teams.find((t) => t.id === id);
@@ -65,6 +75,7 @@ function resetData() {
   const data = loadData();
   teams = data.teams;
   challenges = data.challenges;
+  tipsByChallenge = loadTips(); // (Tâche 2) recharger aussi les tips si reset
 }
 
 function toggleDisabled(challengeId) {
@@ -133,11 +144,73 @@ function swapPlayersBackend(playerId, targetTeamId, targetPlayerId) {
 let suspenseMode = false;
 let pauseUntil = null;
 
-const server = http.createServer((req, res) => {
-  const { method } = req;
-  let url = req.url || "/";
+/**
+ * (Tâche 2)
+ * Retourne la liste des tips actifs à l'instant donné.
+ * - nowDate: Date (par défaut = maintenant)
+ * - options.challengeId: string | undefined -> filtre sur un challenge précis
+ * Renvoie un tableau de { challengeId, tip_txt, heure_reveal, heure_fin } pour tous les tips dont
+ * heure_reveal <= now < heure_fin.
+ */
+function getActiveTips(nowDate = new Date(), options = {}) {
+  const nowMs = nowDate.getTime();
+  const filterChallenge = options.challengeId || null;
 
-  // Désactiver tout cache
+  const results = [];
+  for (const [challengeId, groups] of Object.entries(tipsByChallenge || {})) {
+    if (filterChallenge && challengeId !== filterChallenge) continue;
+    if (!Array.isArray(groups)) continue;
+    // groups : [ [tip1, tip2, tip3], ... ]
+    for (const group of groups) {
+      if (!Array.isArray(group)) continue;
+      for (const tip of group) {
+        if (!tip) continue;
+        const start = Date.parse(tip.heure_reveal);
+        const end = Date.parse(tip.heure_fin);
+        if (Number.isFinite(start) && Number.isFinite(end)) {
+          if (start <= nowMs && nowMs < end) {
+            results.push({
+              challengeId,
+              tip_txt: tip.tip_txt,
+              heure_reveal: tip.heure_reveal,
+              heure_fin: tip.heure_fin,
+            });
+          }
+        }
+      }
+    }
+  }
+  // Tri optionnel par challengeId puis par fenêtre de temps
+  results.sort((a, b) => {
+    if (a.challengeId === b.challengeId) {
+      return Date.parse(a.heure_reveal) - Date.parse(b.heure_reveal);
+    }
+    return a.challengeId.localeCompare(b.challengeId);
+  });
+  return results;
+}
+
+const server = http.createServer((req, res) => {
+  // On isole le chemin sans le querystring (supporte ?t=..., etc.)
+  const { method, headers } = req;
+  const rawUrl = req.url || "/";
+  const pathname = rawUrl.split("?")[0];
+
+  // Désactiver tout cache sur les routes API
+  if (pathname.startsWith("/api/")) {
+    res.setHeader(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate"
+    );
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
+  }
+  // CORS headers
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  // Disable caching
   res.setHeader(
     "Cache-Control",
     "no-store, no-cache, must-revalidate, proxy-revalidate"
@@ -146,233 +219,213 @@ const server = http.createServer((req, res) => {
   res.setHeader("Expires", "0");
   res.setHeader("Surrogate-Control", "no-store");
 
-  // CORS
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
   if (method === "OPTIONS") {
     res.statusCode = 204;
     return res.end();
   }
 
-  // ...existing code...
-  // ====== API ======
-  if (url.startsWith("/api/")) {
-    // Strip query string for API routing
-    const cleanUrl = url.split("?")[0];
-
-    // Route pour obtenir l'état global (suspens et pause)
-    if (method === "GET" && cleanUrl === "/api/state") {
-      res.setHeader("Content-Type", "application/json");
-      return res.end(JSON.stringify({ suspenseMode, pauseUntil }));
-    }
-    // Récupération des équipes
-    if (method === "GET" && cleanUrl === "/api/teams") {
-      res.setHeader("Content-Type", "application/json");
-      return res.end(JSON.stringify(teams));
-    }
-    // Récupération des défis
-    if (method === "GET" && cleanUrl === "/api/challenges") {
-      res.setHeader("Content-Type", "application/json");
-      return res.end(JSON.stringify(challenges));
-    }
-    // Validation / annulation d'un défi
-    if (method === "POST" && cleanUrl === "/api/validate") {
-      let body = "";
-      req.on("data", (chunk) => (body += chunk));
-      req.on("end", () => {
-        try {
-          const data = JSON.parse(body);
-          const { teamId, challengeId } = data;
-          toggleChallenge(teamId, challengeId);
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "application/json");
-          return res.end(JSON.stringify({ success: true, teams, challenges }));
-        } catch (err) {
-          res.statusCode = 400;
-          return res.end(JSON.stringify({ success: false, error: err.message }));
-        }
-      });
-      return;
-    }
-    // Ajout de points personnels
-    if (method === "POST" && cleanUrl === "/api/addPersonalPoints") {
-      let body = "";
-      req.on("data", (chunk) => (body += chunk));
-      req.on("end", () => {
-        try {
-          const data = JSON.parse(body);
-          const { teamId, playerId, amount } = data;
-          addPoints(teamId, playerId, amount);
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "application/json");
-          return res.end(JSON.stringify({ success: true, teams }));
-        } catch (err) {
-          res.statusCode = 400;
-          return res.end(JSON.stringify({ success: false, error: err.message }));
-        }
-      });
-      return;
-    }
-
-    //Retirer des points personnels
-    if (method === "POST" && cleanUrl === "/api/removePersonalPoints") {
-      let body = "";
-      req.on("data", (chunk) => (body += chunk));
-      req.on("end", () => {
-        try {
-          const data = JSON.parse(body);
-          const { teamId, playerId, amount } = data;
-          addPoints(teamId, playerId, -amount);
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "application/json");
-          return res.end(JSON.stringify({ success: true, teams }));
-        } catch (err) {
-          res.statusCode = 400;
-          return res.end(JSON.stringify({ success: false, error: err.message }));
-        }
-      });
-      return;
-    }
-
-    // Activer/désactiver un défi
-    if (method === "POST" && cleanUrl === "/api/toggleDisabled") {
-      let body = "";
-      req.on("data", (chunk) => (body += chunk));
-      req.on("end", () => {
-        try {
-          const data = JSON.parse(body);
-          const { challengeId } = data;
-          toggleDisabled(challengeId);
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "application/json");
-          return res.end(JSON.stringify({ success: true, challenges, teams }));
-        } catch (err) {
-          res.statusCode = 400;
-          return res.end(JSON.stringify({ success: false, error: err.message }));
-        }
-      });
-      return;
-    }
-    // Activer ou désactiver le mode suspens
-    if (method === "POST" && cleanUrl === "/api/setSuspense") {
-      let body = "";
-      req.on("data", (chunk) => (body += chunk));
-      req.on("end", () => {
-        try {
-          const data = JSON.parse(body);
-          suspenseMode = !!data.active;
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "application/json");
-          return res.end(JSON.stringify({ success: true, suspenseMode }));
-        } catch (err) {
-          res.statusCode = 400;
-          return res.end(JSON.stringify({ success: false, error: err.message }));
-        }
-      });
-      return;
-    }
-    // Démarrer ou annuler une pause
-    if (method === "POST" && cleanUrl === "/api/setPause") {
-      let body = "";
-      req.on("data", (chunk) => (body += chunk));
-      req.on("end", () => {
-        try {
-          const data = JSON.parse(body);
-          const { resumeAt } = data;
-          if (typeof resumeAt === "string" && resumeAt.trim()) {
-            pauseUntil = resumeAt;
-          } else {
-            pauseUntil = null;
-          }
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "application/json");
-          return res.end(JSON.stringify({ success: true, pauseUntil }));
-        } catch (err) {
-          res.statusCode = 400;
-          return res.end(JSON.stringify({ success: false, error: err.message }));
-        }
-      });
-      return;
-    }
-    // Échanger deux joueurs entre équipes
-    if (method === "POST" && cleanUrl === "/api/swapPlayers") {
-      let body = "";
-      req.on("data", (chunk) => (body += chunk));
-      req.on("end", () => {
-        try {
-          const data = JSON.parse(body);
-          const { playerId, targetTeamId, targetPlayerId } = data;
-          swapPlayersBackend(playerId, targetTeamId, targetPlayerId);
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "application/json");
-          return res.end(JSON.stringify({ success: true, teams }));
-        } catch (err) {
-          res.statusCode = 400;
-          res.setHeader("Content-Type", "application/json");
-          return res.end(JSON.stringify({ success: false, error: err.message }));
-        }
-      });
-      return;
-    }
-    // Reset complet
-    if (method === "GET" && cleanUrl === "/api/reset") {
-      resetData();
-      res.statusCode = 200;
-      res.setHeader("Content-Type", "application/json");
-      return res.end(JSON.stringify({ success: true }));
-    }
-
-    // Route API inconnue
-    res.statusCode = 404;
+  // ------- ROUTES API EXISTANTES -------
+  // Route pour obtenir l'état global (suspens et pause)
+  if (method === "GET" && pathname === "/api/state") {
     res.setHeader("Content-Type", "application/json");
-    return res.end(JSON.stringify({ error: "Not found" }));
+    return res.end(JSON.stringify({ suspenseMode, pauseUntil }));
   }
-// ...existing code...
+  // Récupération des équipes
+  if (method === "GET" && pathname === "/api/teams") {
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify(teams));
+  }
+  // Récupération des défis
+  if (method === "GET" && pathname === "/api/challenges") {
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify(challenges));
+  }
 
-  // ====== STATIC (frontend) ======
-  if (method === "GET") {
-    // Nettoyage de l'URL (sans querystring)
-    const cleanPath = decodeURIComponent((url || "/").split("?")[0]);
-    const wanted = cleanPath === "/" ? "index.html" : cleanPath;
-    const filePath = path.join(staticDir, wanted);
+  // (Tâche 2) NOUVEL ENDPOINT : tips actifs maintenant (avec options)
+  // GET /api/tips
+  // Paramètres optionnels:
+  //   - challengeId=<id> : filtrer sur un challenge
+  //   - now=<ISO date>   : forcer l'instant (utile pour tester)
+  if (method === "GET" && pathname === "/api/tips") {
+    try {
+      const base = `http://${headers.host || "localhost"}`;
+      const urlObj = new URL(rawUrl, base);
+      const challengeId = urlObj.searchParams.get("challengeId");
+      const nowParam = urlObj.searchParams.get("now");
 
-    // Servir fichier si existant, sinon fallback SPA -> index.html
-    fs.stat(filePath, (err, stat) => {
-      const serveIndex = () => {
-        const indexPath = path.join(staticDir, "index.html");
-        fs.readFile(indexPath, (err2, data) => {
-          if (err2) {
-            res.statusCode = 404;
-            res.setHeader("Content-Type", "text/plain");
-            return res.end("Not found");
-          }
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "text/html");
-          return res.end(data);
-        });
-      };
-
-      if (err || !stat || !stat.isFile()) {
-        // Fallback SPA
-        return serveIndex();
+      const nowDate = nowParam ? new Date(nowParam) : new Date();
+      if (Number.isNaN(nowDate.getTime())) {
+        res.statusCode = 400;
+        res.setHeader("Content-Type", "application/json");
+        return res.end(JSON.stringify({ success: false, error: "Paramètre 'now' invalide" }));
       }
 
+      const tips = getActiveTips(nowDate, { challengeId });
       res.statusCode = 200;
-      res.setHeader("Content-Type", getMimeType(filePath));
-      const stream = fs.createReadStream(filePath);
-      stream.on("error", () => {
-        res.statusCode = 500;
-        res.setHeader("Content-Type", "text/plain");
-        return res.end("Internal Server Error");
-      });
-      stream.pipe(res);
-    });
-    return; // ⚠️ Important: ne pas tomber sur le 404 JSON après avoir commencé la statique
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ success: true, now: nowDate.toISOString(), tips }));
+    } catch (err) {
+      res.statusCode = 500;
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ success: false, error: err?.message || String(err) }));
+    }
   }
 
-  // Route inconnue (méthodes non gérées)
+  // Validation / annulation d'un défi
+  if (method === "POST" && pathname === "/api/validate") {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      try {
+        const data = JSON.parse(body);
+        const { teamId, challengeId } = data;
+        toggleChallenge(teamId, challengeId);
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        return res.end(JSON.stringify({ success: true, teams, challenges }));
+      } catch (err) {
+        res.statusCode = 400;
+        return res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+  // Ajout de points personnels
+  if (method === "POST" && pathname === "/api/addPersonalPoints") {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      try {
+        const data = JSON.parse(body);
+        const { teamId, playerId, amount } = data;
+        addPoints(teamId, playerId, amount);
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        return res.end(JSON.stringify({ success: true, teams }));
+      } catch (err) {
+        res.statusCode = 400;
+        return res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+  // Activer/désactiver un défi
+  if (method === "POST" && pathname === "/api/toggleDisabled") {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      try {
+        const data = JSON.parse(body);
+        const { challengeId } = data;
+        toggleDisabled(challengeId);
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        return res.end(JSON.stringify({ success: true, challenges, teams }));
+      } catch (err) {
+        res.statusCode = 400;
+        return res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+  // Activer ou désactiver le mode suspens
+  if (method === "POST" && pathname === "/api/setSuspense") {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      try {
+        const data = JSON.parse(body);
+        // data.active doit être un boolean
+        suspenseMode = !!data.active;
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        return res.end(JSON.stringify({ success: true, suspenseMode }));
+      } catch (err) {
+        res.statusCode = 400;
+        return res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+  // Démarrer ou annuler une pause. Envoyer resumeAt sous forme ISO ou null pour annuler.
+  if (method === "POST" && pathname === "/api/setPause") {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      try {
+        const data = JSON.parse(body);
+        const { resumeAt } = data;
+        // Si resumeAt est une chaîne non vide, la convertir ; sinon, annuler la pause
+        if (typeof resumeAt === "string" && resumeAt.trim()) {
+          pauseUntil = resumeAt;
+        } else {
+          pauseUntil = null;
+        }
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        return res.end(JSON.stringify({ success: true, pauseUntil }));
+      } catch (err) {
+        res.statusCode = 400;
+        res.setHeader("Content-Type", "application/json");
+        return res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+  // Échanger deux joueurs entre équipes
+  if (method === "POST" && pathname === "/api/swapPlayers") {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      try {
+        const data = JSON.parse(body);
+        const { playerId, targetTeamId, targetPlayerId } = data;
+        swapPlayersBackend(playerId, targetTeamId, targetPlayerId);
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        return res.end(JSON.stringify({ success: true, teams }));
+      } catch (err) {
+        res.statusCode = 400;
+        res.setHeader("Content-Type", "application/json");
+        return res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+  // Reset complet
+  if (method === "GET" && pathname === "/api/reset") {
+    resetData();
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify({ success: true }));
+  }
+
+  // Gestion des fichiers statiques (frontend)
+  const staticDir = path.join(__dirname, "dist");
+  const filePath = path.join(staticDir, pathname === "/" ? "index.html" : pathname);
+  fs.readFile(filePath, (err, content) => {
+    if (err) {
+      res.statusCode = 404;
+      res.setHeader("Content-Type", "text/plain");
+      return res.end("Not found");
+    }
+    res.setHeader("Content-Type", getMimeType(filePath));
+    return res.end(content);
+  });
+
+  // Route inconnue
   res.statusCode = 404;
   res.setHeader("Content-Type", "application/json");
   return res.end(JSON.stringify({ error: "Not found" }));
@@ -386,24 +439,15 @@ server.listen(PORT, () => {
 function getMimeType(filePath) {
   const ext = path.extname(filePath).toLowerCase();
   switch (ext) {
-    case ".html":
-      return "text/html";
-    case ".js":
-      return "application/javascript";
-    case ".css":
-      return "text/css";
-    case ".json":
-      return "application/json";
-    case ".png":
-      return "image/png";
+    case ".html": return "text/html";
+    case ".js": return "application/javascript";
+    case ".css": return "text/css";
+    case ".json": return "application/json";
+    case ".png": return "image/png";
     case ".jpg":
-    case ".jpeg":
-      return "image/jpeg";
-    case ".svg":
-      return "image/svg+xml";
-    case ".ico":
-      return "image/x-icon";
-    default:
-      return "application/octet-stream";
+    case ".jpeg": return "image/jpeg";
+    case ".svg": return "image/svg+xml";
+    case ".ico": return "image/x-icon";
+    default: return "application/octet-stream";
   }
 }
