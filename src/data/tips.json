@@ -1,7 +1,7 @@
 {
   "r1": [
     [
-      { "heure_reveal": "2025-08-08T10:00:00Z", "heure_fin": "2025-08-09T10:30:00Z", "tip_txt": "Indice rare : la solution est unique." },
+      { "heure_reveal": "2025-07-08T10:00:00Z", "heure_fin": "2025-08-09T10:30:00Z", "tip_txt": "Indice rare : la solution est unique." },
       { "heure_reveal": "2025-08-08T10:30:00Z", "heure_fin": "2025-08-08T11:00:00Z", "tip_txt": "Un seul gagnant possible." },
       { "heure_reveal": "2025-08-08T11:00:00Z", "heure_fin": "2025-08-08T11:30:00Z", "tip_txt": "Observez le motif caché." }
     ]
@@ -9,7 +9,7 @@
   "s1": [
     [
       { "heure_reveal": "2025-08-08T10:00:00Z", "heure_fin": "2025-08-09T10:30:00Z", "tip_txt": "Secret : l’indice n’est pas où vous pensez." },
-      { "heure_reveal": "2025-08-08T10:30:00Z", "heure_fin": "2025-08-08T11:00:00Z", "tip_txt": "Cherchez l’objet déplacé." },
+      { "heure_reveal": "2025-08-07T10:30:00Z", "heure_fin": "2025-08-08T11:00:00Z", "tip_txt": "Cherchez l’objet déplacé." },
       { "heure_reveal": "2025-08-08T11:00:00Z", "heure_fin": "2025-08-08T11:30:00Z", "tip_txt": "Le troisième signal est le bon." }
     ]
   ],
@@ -17,7 +17,7 @@
     [
       { "heure_reveal": "2025-08-08T10:00:00Z", "heure_fin": "2025-08-08T10:30:00Z", "tip_txt": "Disponible plus tard : préparez-vous." },
       { "heure_reveal": "2025-08-08T10:30:00Z", "heure_fin": "2025-08-08T11:00:00Z", "tip_txt": "Gardez de l’énergie pour la fin." },
-      { "heure_reveal": "2025-08-08T11:00:00Z", "heure_fin": "2025-08-09T11:30:00Z", "tip_txt": "Synchronisez votre équipe." }
+      { "heure_reveal": "2025-08-07T11:00:00Z", "heure_fin": "2025-08-09T11:30:00Z", "tip_txt": "Synchronisez votre équipe." }
     ]
   ]
 }
