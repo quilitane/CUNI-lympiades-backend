@@ -257,7 +257,11 @@ const server = http.createServer((req, res) => {
       const tips = getActiveTips(nowDate, { challengeId });
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/json");
-      return res.end(JSON.stringify({ success: true, now: nowDate.toISOString(), tips }));
+      if (nowParam) {
+        return res.end(JSON.stringify({ success: true, now: nowDate.toISOString(), tips }));
+      }
+      return res.end(JSON.stringify({ success: true, tips }));
+      
     } catch (err) {
       res.statusCode = 500;
       res.setHeader("Content-Type", "application/json");
