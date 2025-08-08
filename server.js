@@ -4,7 +4,7 @@ const path = require("path");
 // Chargement des données initiales depuis les fichiers JSON du frontend
 const teamsPath = path.join(__dirname, "src", "data", "teams.json");
 const challengesPath = path.join(__dirname, "src", "data", "challenges.json");
-// (Tâche 2) Fichier des tips
+// Fichier des tips (Tâche 2)
 const tipsPath = path.join(__dirname, "src", "data", "tips.json");
 
 function loadData() {
@@ -13,12 +13,12 @@ function loadData() {
   return { teams, challenges };
 }
 
-// (Tâche 2) Charger les tips (voir Tâche 1: src/data/tips.json)
+// Chargement tips
 function loadTips() {
   try {
     return JSON.parse(fs.readFileSync(tipsPath, "utf8"));
   } catch (e) {
-    console.warn("Impossible de charger tips.json, utilisation d'un objet vide.");
+    console.warn("Impossible de charger tips.json:", e?.message);
     return {};
   }
 }
@@ -75,7 +75,7 @@ function resetData() {
   const data = loadData();
   teams = data.teams;
   challenges = data.challenges;
-  tipsByChallenge = loadTips(); // recharger aussi les tips lors d'un reset
+  tipsByChallenge = loadTips(); // recharger aussi les tips
 }
 
 function toggleDisabled(challengeId) {
@@ -145,7 +145,6 @@ let suspenseMode = false;
 let pauseUntil = null;
 
 /**
- * (Tâche 2)
  * Retourne la liste des tips actifs à l'instant donné.
  * - nowDate: Date (par défaut = maintenant)
  * - options.challengeId: string | undefined -> filtre sur un challenge précis
@@ -191,12 +190,11 @@ function getActiveTips(nowDate = new Date(), options = {}) {
 }
 
 const server = http.createServer((req, res) => {
-  // On isole le chemin sans le querystring pour accepter ?t=..., etc.
+  // Désactiver tout cache sur les routes API
   const { method, headers } = req;
   const rawUrl = req.url || "/";
-  const pathname = rawUrl.split("?")[0];
+  const pathname = rawUrl.split("?")[0]; // on ignore les querystrings (ex: ?t=...)
 
-  // Désactiver tout cache sur les routes API
   if (pathname.startsWith("/api/")) {
     res.setHeader(
       "Cache-Control",
@@ -224,7 +222,6 @@ const server = http.createServer((req, res) => {
     return res.end();
   }
 
-  // ------- ROUTES API EXISTANTES -------
   // Route pour obtenir l'état global (suspens et pause)
   if (method === "GET" && pathname === "/api/state") {
     res.setHeader("Content-Type", "application/json");
@@ -241,7 +238,7 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify(challenges));
   }
 
-  // (Tâche 2) NOUVEL ENDPOINT : tips actifs maintenant (avec options)
+  // NOUVEL ENDPOINT — tips actifs maintenant (avec options)
   // GET /api/tips?challengeId=<id>&now=<ISO>
   if (method === "GET" && pathname === "/api/tips") {
     try {
@@ -409,31 +406,20 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({ success: true }));
   }
 
-  // ====== STATIC (frontend) ======
-  if (method === "GET") {
-    const staticDir = path.join(__dirname, "dist");
-    const filePath = path.join(staticDir, pathname === "/" ? "index.html" : pathname);
-
-    // IMPORTANT : on return immédiatement après readFile pour éviter toute 404 envoyée ensuite
-    return fs.readFile(filePath, (err, content) => {
-      if (res.headersSent) return; // garde-fou
-
-      if (err) {
-        res.statusCode = 404;
-        res.setHeader("Content-Type", "text/plain");
-        return res.end("Not found");
-      }
-
-      res.statusCode = 200;
-      res.setHeader("Content-Type", getMimeType(filePath));
-      return res.end(content);
-    });
-  }
-
-  // Route inconnue (méthodes non gérées)
-  res.statusCode = 404;
-  res.setHeader("Content-Type", "application/json");
-  return res.end(JSON.stringify({ error: "Not found" }));
+  // Gestion des fichiers statiques (frontend)
+  const staticDir = path.join(__dirname, "dist");
+  const filePath = path.join(staticDir, pathname === "/" ? "index.html" : pathname);
+  // IMPORTANT : on "return" ici pour ne pas tomber ensuite sur la 404
+  return fs.readFile(filePath, (err, content) => {
+    if (res.headersSent) return; // garde-fou
+    if (err) {
+      res.statusCode = 404;
+      res.setHeader("Content-Type", "text/plain");
+      return res.end("Not found");
+    }
+    res.setHeader("Content-Type", getMimeType(filePath));
+    return res.end(content);
+  });
 });
 
 const PORT = process.env.PORT || 3000;
