@@ -4,7 +4,7 @@ const path = require("path");
 // Chargement des données initiales depuis les fichiers JSON du frontend
 const teamsPath = path.join(__dirname, "src", "data", "teams.json");
 const challengesPath = path.join(__dirname, "src", "data", "challenges.json");
-// (Tâche 2) Chargement des tips (structure: { [challengeId]: [ [ {heure_reveal, heure_fin, tip_txt}, x3 ], ... ] })
+// (Tâche 2) Fichier des tips
 const tipsPath = path.join(__dirname, "src", "data", "tips.json");
 
 function loadData() {
@@ -13,12 +13,12 @@ function loadData() {
   return { teams, challenges };
 }
 
-// (Tâche 2) Charger les tips
+// (Tâche 2) Charger les tips (voir Tâche 1: src/data/tips.json)
 function loadTips() {
   try {
     return JSON.parse(fs.readFileSync(tipsPath, "utf8"));
   } catch (e) {
-    console.warn("Impossible de charger tips.json, retour d'un objet vide:", e?.message);
+    console.warn("Impossible de charger tips.json, utilisation d'un objet vide.");
     return {};
   }
 }
@@ -75,7 +75,7 @@ function resetData() {
   const data = loadData();
   teams = data.teams;
   challenges = data.challenges;
-  tipsByChallenge = loadTips(); // (Tâche 2) recharger aussi les tips si reset
+  tipsByChallenge = loadTips(); // recharger aussi les tips lors d'un reset
 }
 
 function toggleDisabled(challengeId) {
@@ -191,7 +191,7 @@ function getActiveTips(nowDate = new Date(), options = {}) {
 }
 
 const server = http.createServer((req, res) => {
-  // On isole le chemin sans le querystring (supporte ?t=..., etc.)
+  // On isole le chemin sans le querystring pour accepter ?t=..., etc.
   const { method, headers } = req;
   const rawUrl = req.url || "/";
   const pathname = rawUrl.split("?")[0];
@@ -242,10 +242,7 @@ const server = http.createServer((req, res) => {
   }
 
   // (Tâche 2) NOUVEL ENDPOINT : tips actifs maintenant (avec options)
-  // GET /api/tips
-  // Paramètres optionnels:
-  //   - challengeId=<id> : filtrer sur un challenge
-  //   - now=<ISO date>   : forcer l'instant (utile pour tester)
+  // GET /api/tips?challengeId=<id>&now=<ISO>
   if (method === "GET" && pathname === "/api/tips") {
     try {
       const base = `http://${headers.host || "localhost"}`;
@@ -412,20 +409,28 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({ success: true }));
   }
 
-  // Gestion des fichiers statiques (frontend)
-  const staticDir = path.join(__dirname, "dist");
-  const filePath = path.join(staticDir, pathname === "/" ? "index.html" : pathname);
-  fs.readFile(filePath, (err, content) => {
-    if (err) {
-      res.statusCode = 404;
-      res.setHeader("Content-Type", "text/plain");
-      return res.end("Not found");
-    }
-    res.setHeader("Content-Type", getMimeType(filePath));
-    return res.end(content);
-  });
+  // ====== STATIC (frontend) ======
+  if (method === "GET") {
+    const staticDir = path.join(__dirname, "dist");
+    const filePath = path.join(staticDir, pathname === "/" ? "index.html" : pathname);
 
-  // Route inconnue
+    // IMPORTANT : on return immédiatement après readFile pour éviter toute 404 envoyée ensuite
+    return fs.readFile(filePath, (err, content) => {
+      if (res.headersSent) return; // garde-fou
+
+      if (err) {
+        res.statusCode = 404;
+        res.setHeader("Content-Type", "text/plain");
+        return res.end("Not found");
+      }
+
+      res.statusCode = 200;
+      res.setHeader("Content-Type", getMimeType(filePath));
+      return res.end(content);
+    });
+  }
+
+  // Route inconnue (méthodes non gérées)
   res.statusCode = 404;
   res.setHeader("Content-Type", "application/json");
   return res.end(JSON.stringify({ error: "Not found" }));
